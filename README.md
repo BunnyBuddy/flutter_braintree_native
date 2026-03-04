@@ -9,6 +9,11 @@ Unlike older plugins, this package does not rely on Braintree’s Drop-In UI. In
 Special thanks to [Pikaju](https://github.com/pikaju)
 for the original Drop-In based implementation that inspired me to do this apparent rewrite.
 
+| Platform | Card | PayPal | Google Pay | Venmo | Apple Pay |
+|--------|------|--------|-----------|-----|----------|
+| Android | ✅ | ✅ | ✅ | ✅ | ❌ |
+| iOS | ✅ | ✅ | ❌ | ✅ | ✅ |
+
 ## ✨ Features
 
 1. 💳 Credit Card payments (with optional 3D Secure and with optional billing address)
