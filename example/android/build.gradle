@@ -1,0 +1,35 @@
+//file:noinspection GrPackage
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url "https://maven.google.com"
+        }
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.12.3'
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        maven {
+            url "https://cardinalcommerceprod.jfrog.io/artifactory/android"
+        }
+    }
+}
+
+rootProject.buildDir = '../build'
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(':app')
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}

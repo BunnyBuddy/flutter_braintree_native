@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application>
+
+        <!-- Drop-in and Custom Activities -->
+        <activity
+            android:name=".FlutterBraintreeCustom"
+            android:exported="true"
+            android:theme="@style/bt_transparent_activity" />
+
+        <!-- For Google Pay -->
+        <activity
+            android:name=".GooglePayActivity"
+            android:exported="true"
+            android:theme="@style/bt_transparent_activity"
+            android:launchMode="singleTop"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- For PayPal -->
+        <activity
+            android:name=".PayPalCheckoutActivity"
+            android:exported="true"
+            android:theme="@style/bt_transparent_activity"
+            android:launchMode="singleTop"
+            android:windowSoftInputMode="adjustResize">
+
+            <!-- Browser switch / deep link fallback for Braintree -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="${applicationId}.braintree" />
+            </intent-filter>
+
+        </activity>
+
+
+        <!-- For Card -->
+        <activity
+            android:name=".CardPaymentActivity"
+            android:exported="true"
+            android:theme="@style/bt_transparent_activity"
+            android:launchMode="singleTop"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- For Venmo -->
+        <activity
+            android:name=".VenmoActivity"
+            android:exported="true"
+            android:theme="@style/bt_transparent_activity"
+            android:launchMode="singleTop" />
+
+    </application>
+
+</manifest>

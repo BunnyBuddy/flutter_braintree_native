@@ -1,0 +1,1 @@
+// This plugin is Swift-only; no Objective-C interface is needed.

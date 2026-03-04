@@ -1,0 +1,72 @@
+group = "com.bunnybuddy.flutter_braintree_native"
+version = "1.0"
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath "com.android.tools.build:gradle:8.12.3"
+    }
+}
+
+rootProject.allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url = "https://cardinalcommerceprod.jfrog.io/artifactory/android"
+        }
+    }
+}
+
+apply plugin: "com.android.library"
+
+android {
+    compileSdk 36
+    defaultConfig {
+        minSdkVersion 24
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    ndkVersion = "29.0.014033849"
+    lintOptions {
+        disable "InvalidPackage"
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    namespace = "com.bunnybuddy.flutter_braintree_native"
+}
+
+dependencies {
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom:2.2.10"))
+    implementation "com.google.android.gms:play-services-wallet:19.5.0"
+    implementation "androidx.appcompat:appcompat:1.7.1"
+    implementation "androidx.constraintlayout:constraintlayout:2.2.1"
+
+    implementation 'com.braintreepayments.api:google-pay:5.24.0'
+    implementation 'com.braintreepayments.api:card:5.24.0'
+    implementation 'com.braintreepayments.api:braintree-core:5.24.0'
+    implementation "com.braintreepayments.api:data-collector:5.24.0"
+    implementation "com.braintreepayments.api:venmo:5.24.0"
+    implementation "com.braintreepayments.api:paypal:5.24.0"
+    implementation "com.braintreepayments.api:three-d-secure:5.24.0"
+
+    components.all {
+        allVariants {
+            withDependencies { deps ->
+                deps.each { dep ->
+                    if (dep.group == "net.minidev" && dep.name == "json-smart") {
+                        dep.version {
+                            prefer "2.3"
+                        }
+                        dep.because "resolving dependencies issue"
+                    }
+                }
+            }
+        }
+    }
+}
