@@ -97,12 +97,6 @@ Example:
 
 ⚠️ **Important:** Upon cancellation (user canceled the operation/payment) Venmo doesn't return null, (we handled user cancellation like this only for Venmo, the rest of the payment methods return null). It returns an error with the message "User canceled Venmo".
 
-In your App Delegate or your Runner project, you need to specify the URL scheme for redirecting payments as following:
-
-```swift 
-BTAppContextSwitcher.sharedInstance._returnURLScheme = "com.your-company.your-app.braintree"
-```
-
 #### iOS Venmo / PayPal Redirect
 
 Add the following to your AppDelegate:
