@@ -1,3 +1,9 @@
+## 0.1.1
+
+- Improve README documentation
+- Add platform support table
+- Minor documentation improvements
+
 ## 0.1.0
 
 - Initial release
