@@ -2,15 +2,14 @@ name: flutter_braintree_native
 description: Flutter plugin that wraps the native Braintree SDKs. Enables payments with credit cards, PayPal, Google Pay, Apple Pay and more.
 version: 0.1.0
 
-homepage: https://github.com/bunnybuddy/flutter_braintree_native
-repository: https://github.com/bunnybuddy/flutter_braintree_native
-issue_tracker: https://github.com/bunnybuddy/flutter_braintree_native/issues
+homepage: https://github.com/BunnyBuddy/flutter_braintree_native
+repository: https://github.com/BunnyBuddy/flutter_braintree_native
+issue_tracker: https://github.com/BunnyBuddy/flutter_braintree_native/issues
 
 license: MIT
 
 topics:
-  - card-payment
-  - braintree
+  - credit-card-payment
   - paypal
   - google-pay
   - apple-pay
