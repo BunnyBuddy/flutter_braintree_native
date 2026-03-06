@@ -108,7 +108,7 @@ Add the following to your AppDelegate:
 
 ```swift
 override func application(_ app: UIApplication,
-openurl: URL,
+open url: URL,
 options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
     if BTAppContextSwitcher.sharedInstance.handleOpen(url) {
         return true
