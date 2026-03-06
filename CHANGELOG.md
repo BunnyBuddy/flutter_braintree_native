@@ -1,3 +1,8 @@
+## 0.1.2
+
+- Improved stability
+- Resolved some edge cases in card payment and venmo payment
+
 ## 0.1.1
 
 - Improve README documentation
