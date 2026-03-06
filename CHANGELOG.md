@@ -1,3 +1,8 @@
+## 0.1.3
+
+- Improved stability for ios devices
+- Resolved an issue in AppDelegate.swift which made it impossible to run the example app on ios
+
 ## 0.1.2
 
 - Improved stability

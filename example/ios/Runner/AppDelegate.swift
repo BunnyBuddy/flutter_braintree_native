@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import Braintree
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -11,11 +12,13 @@ import UIKit
 
     // Handle Universal Link redirects
 
-    override func application(_ app: UIApplication,
-    openurl: URL,
-    options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+    override func application(
+    _ app: UIApplication,
+    open url: URL,
+    options: [UIApplication.OpenURLOptionsKey : Any] = [:]
+    ) -> Bool {
 
-        // Let Braintree decide if this belongs to Venmo / PayPal / etc
+        // Let Braintree handle Venmo / PayPal return
         if BTAppContextSwitcher.sharedInstance.handleOpen(url) {
             return true
         }
