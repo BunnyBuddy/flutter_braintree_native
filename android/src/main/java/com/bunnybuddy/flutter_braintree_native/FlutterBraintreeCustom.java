@@ -59,7 +59,7 @@ public class FlutterBraintreeCustom extends AppCompatActivity {
                 intent.putExtra("deviceData", deviceData);
             } else if (dataCollectorResult instanceof DataCollectorResult.Failure) {
                 Exception e = ((DataCollectorResult.Failure) dataCollectorResult).getError();
-                intent.putExtra("deviceDataError", e != null ? e.getMessage() : "Device data collection failed");
+                intent.putExtra("deviceDataError", e.getMessage());
             }
             intent.putExtra("type", "deviceData");
             setResult(Activity.RESULT_OK, intent);
