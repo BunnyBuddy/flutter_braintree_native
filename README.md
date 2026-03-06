@@ -20,7 +20,7 @@ for the original Drop-In based implementation that inspired me to do this appare
 2. 🅿️ PayPal Checkout
 3. 𝐠 Google Pay (Android)
 4.  Apple Pay (IOS)
-5. 🟣 Venmo (almost complete)
+5. 🟣 Venmo
 6. 📊 Device Data Collection (Fraud Detection)
 7. 🔐 Native SDK integration (no WebView hacks or drop-in)
 
@@ -188,7 +188,7 @@ Never complete payments directly from the client.
 
 ### 📌 Known Limitations
 
-Venmo support has limited testing (sandbox support is restricted by region).
+Venmo support has limited testing (sandbox support is restricted by region), so please test venmo at your end before using it in production.
 
 Vaulting is not yet implemented.
 

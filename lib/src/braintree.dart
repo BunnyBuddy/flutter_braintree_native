@@ -1,5 +1,4 @@
 import 'package:flutter/services.dart';
-import 'dart:async';
 
 /// A Flutter wrapper around the native Braintree SDKs.
 ///
@@ -22,6 +21,14 @@ class Braintree {
   static const MethodChannel _kChannel = MethodChannel('flutter_braintree.custom');
 
   const Braintree._();
+
+  static String? _validateRequired(String fieldName, String value) {
+    if (value.trim().isEmpty) {
+      return '$fieldName must not be empty';
+    }
+    return null;
+  }
+
 
   /// Starts a credit/debit card payment using the native Braintree SDK.
   ///
@@ -51,6 +58,16 @@ class Braintree {
     required String cvv,
     required String amount,
   }) async {
+    final authError = _validateRequired('authorization', authorization);
+    if (authError != null) return {'error': authError};
+    if (_validateRequired('cardNumber', cardNumber) != null ||
+        _validateRequired('expirationMonth', expirationMonth) != null ||
+        _validateRequired('expirationYear', expirationYear) != null ||
+        _validateRequired('cvv', cvv) != null ||
+        _validateRequired('amount', amount) != null) {
+      return {'error': 'Card fields must not be empty'};
+    }
+
     try {
       final result = await _kChannel.invokeMethod('startCardPayment', {
         'authorization': authorization,
@@ -100,6 +117,16 @@ class Braintree {
     String? streetAddress,
     String? postalCode,
   }) async {
+    final authError = _validateRequired('authorization', authorization);
+    if (authError != null) return {'error': authError};
+    if (_validateRequired('cardNumber', cardNumber) != null ||
+        _validateRequired('expirationMonth', expirationMonth) != null ||
+        _validateRequired('expirationYear', expirationYear) != null ||
+        _validateRequired('cvv', cvv) != null ||
+        _validateRequired('amount', amount) != null) {
+      return {'error': 'Card fields must not be empty'};
+    }
+
     try {
       final result = await _kChannel.invokeMethod('startCardPayment', {
         'authorization': authorization,
@@ -138,11 +165,17 @@ class Braintree {
   /// for improved fraud protection.
 
   static Future<String?> collectDeviceData(String authorization) async {
-    final deviceData = await _kChannel.invokeMethod('collectDeviceData', {
-      'authorization': authorization,
-    });
+    final authError = _validateRequired('authorization', authorization);
+    if (authError != null) return null;
 
-    return deviceData as String?;
+    try {
+      final deviceData = await _kChannel.invokeMethod('collectDeviceData', {
+        'authorization': authorization,
+      });
+      return deviceData as String?;
+    } on PlatformException {
+      return null;
+    }
   }
 
   /// Starts an Apple Pay payment using the native Braintree SDK (iOS only).
@@ -174,6 +207,13 @@ class Braintree {
     String currencyCode = 'USD',
     String? merchantIdentifier,
   }) async {
+    if (_validateRequired('tokenizationKey', tokenizationKey) != null ||
+        _validateRequired('amount', amount) != null ||
+        _validateRequired('displayName', displayName) != null ||
+        _validateRequired('companyName', companyName) != null) {
+      return {'error': 'Apple Pay fields must not be empty'};
+    }
+
     try {
       final result = await _kChannel.invokeMethod('tokenizeApplePay', {
         'authorization': tokenizationKey,
@@ -237,6 +277,11 @@ class Braintree {
     String? amount, // "10.00"
     String usage = "SINGLE_USE", // or "MULTI_USE"
   }) async {
+    if (_validateRequired('tokenizationKey', tokenizationKey) != null ||
+        _validateRequired('appLinkUrl', appLinkUrl) != null) {
+      return {'error': 'tokenizationKey and appLinkUrl must not be empty'};
+    }
+
     try {
       final result = await _kChannel.invokeMethod('startVenmo', {
         'tokenizationKey': tokenizationKey,
@@ -281,6 +326,14 @@ class Braintree {
     required String merchantName,
     required String environment, // "TEST" or "PRODUCTION"
   }) async {
+    if (_validateRequired('tokenizationKey', tokenizationKey) != null ||
+        _validateRequired('amount', amount) != null ||
+        _validateRequired('currencyCode', currencyCode) != null ||
+        _validateRequired('merchantName', merchantName) != null ||
+        _validateRequired('environment', environment) != null) {
+      return {'error': 'Google Pay fields must not be empty'};
+    }
+
     try {
       final result = await _kChannel.invokeMethod('startGooglePay', {
         'tokenizationKey': tokenizationKey,
@@ -330,6 +383,12 @@ class Braintree {
     required String returnUrl,
     bool hasUserLocationConsent = false,
   }) async {
+    if (_validateRequired('authorization', authorization) != null ||
+        _validateRequired('amount', amount) != null ||
+        _validateRequired('returnUrl', returnUrl) != null) {
+      return {'error': 'authorization, amount and returnUrl must not be empty'};
+    }
+
     try {
       final result = await _kChannel.invokeMethod('startPayPal', {
         'authorization': authorization,

@@ -18,48 +18,35 @@ public class FlutterBraintreeCustom extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_flutter_braintree_custom);
-        try {
-            Intent intent = getIntent();
-            String clientToken = intent.getStringExtra("clientToken");
-            String tokenizationKey = intent.getStringExtra("tokenizationKey");
-            String authKey = intent.getStringExtra("authorization");
 
-            authorization = clientToken != null ? clientToken
-                    : tokenizationKey != null ? tokenizationKey
-                    : authKey;
+        Intent intent = getIntent();
+        String clientToken = intent.getStringExtra("clientToken");
+        String tokenizationKey = intent.getStringExtra("tokenizationKey");
+        String authKey = intent.getStringExtra("authorization");
 
-//            authorization = intent.getStringExtra("authorization");
-            String type = intent.getStringExtra("type");
+        authorization = clientToken != null ? clientToken
+                : tokenizationKey != null ? tokenizationKey
+                : authKey;
 
-            assert type != null;
-            if (type.equals("collectDeviceData")) {
-                collectDeviceData();
-            } else {
-                throw new Exception("Invalid request type: " + type);
-            }
-        } catch (Exception e) {
-            Intent result = new Intent();
-            result.putExtra("error", e);
-            setResult(2, result);
-            finish();
+        String type = intent.getStringExtra("type");
+
+        if (authorization == null || authorization.isEmpty()) {
+            finishWithError("Missing authorization for device data collection");
             return;
         }
+
+        if (!"collectDeviceData".equals(type)) {
+            finishWithError("Invalid request type: " + type);
+            return;
+        }
+
+        collectDeviceData();
     }
 
     @Override
     protected void onNewIntent(@NonNull Intent newIntent) {
         super.onNewIntent(newIntent);
         setIntent(newIntent);
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
     }
 
     protected void collectDeviceData() {
@@ -80,4 +67,10 @@ public class FlutterBraintreeCustom extends AppCompatActivity {
         });
     }
 
+    private void finishWithError(String error) {
+        Intent result = new Intent();
+        result.putExtra("error", error);
+        setResult(Activity.RESULT_CANCELED, result);
+        finish();
+    }
 }

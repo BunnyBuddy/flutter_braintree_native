@@ -67,23 +67,25 @@ public class FlutterBraintreePlugin implements FlutterPlugin, ActivityAware, Met
             result.error("already_running", "Cannot launch another custom activity while one is already running.", null);
             return;
         }
+
+        if (activity == null) {
+            result.error("no_activity", "Plugin is not attached to an Activity.", null);
+            return;
+        }
+
         activeResult = result;
 
         switch (call.method) {
             case "startCardPayment" -> {
                 String resolvedAuth = resolveAuthorization(call);
                 if (resolvedAuth == null) {
-                    result.error(
-                            "braintree_error",
-                            "Authorization not specified (no clientToken or tokenizationKey)",
-                            null
-                    );
+                    activeResult.error("braintree_error", "Authorization not specified (no clientToken or tokenizationKey)", null);
                     activeResult = null;
                     return;
                 }
                 Map<String, Object> request = call.argument("request");
                 if (request == null) {
-                    result.error("invalid_args", "request is null", null);
+                    activeResult.error("invalid_args", "request is null", null);
                     activeResult = null;
                     return;
                 }
@@ -95,40 +97,26 @@ public class FlutterBraintreePlugin implements FlutterPlugin, ActivityAware, Met
                 intent.putExtra("expirationYear", (String) request.get("expirationYear"));
                 intent.putExtra("cvv", (String) request.get("cvv"));
                 intent.putExtra("amount", (String) request.get("amount"));
-
-                // Optional billing fields
                 intent.putExtra("streetAddress", (String) request.get("streetAddress"));
                 intent.putExtra("postalCode", (String) request.get("postalCode"));
-                activity.startActivityForResult(intent, CREDIT_CARD_REQUEST_CODE);
-
+                startActivityForResultSafely(intent, CREDIT_CARD_REQUEST_CODE);
             }
             case "collectDeviceData" -> {
                 String resolvedAuth = resolveAuthorization(call);
                 if (resolvedAuth == null) {
-                    result.error(
-                            "braintree_error",
-                            "Authorization not specified (no clientToken or tokenizationKey)",
-                            null
-                    );
+                    activeResult.error("braintree_error", "Authorization not specified (no clientToken or tokenizationKey)", null);
                     activeResult = null;
                     return;
                 }
                 Intent intent = new Intent(activity, FlutterBraintreeCustom.class);
                 intent.putExtra("type", "collectDeviceData");
                 intent.putExtra("authorization", resolvedAuth);
-                if (intent.resolveActivity(activity.getPackageManager()) != null) {
-                    activity.startActivityForResult(intent, CUSTOM_ACTIVITY_REQUEST_CODE);
-                }
-
+                startActivityForResultSafely(intent, CUSTOM_ACTIVITY_REQUEST_CODE);
             }
             case "startGooglePay" -> {
                 String resolvedAuth = resolveAuthorization(call);
                 if (resolvedAuth == null) {
-                    result.error(
-                            "braintree_error",
-                            "Authorization not specified (no clientToken or tokenizationKey)",
-                            null
-                    );
+                    activeResult.error("braintree_error", "Authorization not specified (no clientToken or tokenizationKey)", null);
                     activeResult = null;
                     return;
                 }
@@ -143,17 +131,12 @@ public class FlutterBraintreePlugin implements FlutterPlugin, ActivityAware, Met
                 intent.putExtra("authorization", resolvedAuth);
                 intent.putExtra("googleMerchantName", googleMerchantName);
                 intent.putExtra("environment", environment);
-                activity.startActivityForResult(intent, GOOGLE_PAY_REQUEST_CODE);
-
+                startActivityForResultSafely(intent, GOOGLE_PAY_REQUEST_CODE);
             }
             case "startVenmo" -> {
                 String resolvedAuth = resolveAuthorization(call);
                 if (resolvedAuth == null) {
-                    result.error(
-                            "braintree_error",
-                            "Authorization not specified (no clientToken or tokenizationKey)",
-                            null
-                    );
+                    activeResult.error("braintree_error", "Authorization not specified (no clientToken or tokenizationKey)", null);
                     activeResult = null;
                     return;
                 }
@@ -166,24 +149,18 @@ public class FlutterBraintreePlugin implements FlutterPlugin, ActivityAware, Met
                 intent.putExtra("amount", amount);
                 intent.putExtra("usage", usage);
                 intent.putExtra("appLinkUrl", appLinkUrl);
-
-                activity.startActivityForResult(intent, VENMO_REQUEST_CODE);
+                startActivityForResultSafely(intent, VENMO_REQUEST_CODE);
             }
             case "startPayPal" -> {
                 String resolvedAuth = resolveAuthorization(call);
                 if (resolvedAuth == null) {
-                    result.error(
-                            "braintree_error",
-                            "Authorization not specified (no clientToken or tokenizationKey)",
-                            null
-                    );
+                    activeResult.error("braintree_error", "Authorization not specified (no clientToken or tokenizationKey)", null);
                     activeResult = null;
                     return;
                 }
                 String amount = call.argument("amount");
                 String currencyCode = call.argument("currencyCode");
-                String returnUrl = call.argument("returnUrl"); // your app-link domain
-
+                String returnUrl = call.argument("returnUrl");
                 Boolean userLocationConsent = call.argument("hasUserLocationConsent");
 
                 Intent intent = new Intent(activity, PayPalCheckoutActivity.class);
@@ -192,8 +169,7 @@ public class FlutterBraintreePlugin implements FlutterPlugin, ActivityAware, Met
                 intent.putExtra("currencyCode", currencyCode);
                 intent.putExtra("returnUrl", returnUrl);
                 intent.putExtra("hasUserLocationConsent", userLocationConsent != null && userLocationConsent);
-                activity.startActivityForResult(intent, PAYPAL_REQUEST_CODE);
-
+                startActivityForResultSafely(intent, PAYPAL_REQUEST_CODE);
             }
             default -> {
                 result.notImplemented();
@@ -204,30 +180,29 @@ public class FlutterBraintreePlugin implements FlutterPlugin, ActivityAware, Met
 
     @Override
     public boolean onActivityResult(int requestCode, int resultCode, Intent data) {
-
         if (activeResult == null) return false;
 
         switch (requestCode) {
             case CUSTOM_ACTIVITY_REQUEST_CODE:
-                if (resultCode == Activity.RESULT_OK) {
-                    System.out.println("RESULT OK FROM onActivityResult" + data.getStringExtra("type") + "   " + data.getStringExtra("deviceData"));
+                if (resultCode == Activity.RESULT_OK && data != null) {
                     String type = data.getStringExtra("type");
                     if ("paymentMethodNonce".equals(type)) {
                         activeResult.success(data.getSerializableExtra("paymentMethodNonce"));
                     } else if ("deviceData".equals(type)) {
-                        String deviceData = data.getStringExtra("deviceData");
-                        activeResult.success(deviceData);
+                        activeResult.success(data.getStringExtra("deviceData"));
                     } else {
-                        Exception error = new Exception("Invalid activity result type.");
-                        activeResult.error("error", error.getMessage(), null);
+                        activeResult.error("error", "Invalid activity result type.", null);
                     }
-
                 } else if (resultCode == Activity.RESULT_CANCELED) {
-                    activeResult.success(null);
+                    String errorMessage = data != null ? data.getStringExtra("error") : null;
+                    if (errorMessage == null || errorMessage.isEmpty()) {
+                        activeResult.success(null);
+                    } else {
+                        activeResult.error("canceled", errorMessage, null);
+                    }
                 } else {
-                    Exception error = (Exception) data.getSerializableExtra("error");
-                    assert error != null;
-                    activeResult.error("error", error.getMessage(), null);
+                    String errorMessage = data != null ? data.getStringExtra("error") : "Unknown error";
+                    activeResult.error("error", errorMessage, null);
                 }
                 activeResult = null;
                 return true;
@@ -244,7 +219,6 @@ public class FlutterBraintreePlugin implements FlutterPlugin, ActivityAware, Met
                     resultMap.put("payerId", payerId);
                     resultMap.put("deviceData", deviceData);
                     activeResult.success(resultMap);
-
                 } else if (resultCode == Activity.RESULT_CANCELED) {
                     if (data == null || !data.hasExtra("error")) {
                         activeResult.success(null);
@@ -260,19 +234,17 @@ public class FlutterBraintreePlugin implements FlutterPlugin, ActivityAware, Met
             case GOOGLE_PAY_REQUEST_CODE:
                 if (resultCode == Activity.RESULT_OK && data != null) {
                     String nonce = data.getStringExtra("nonce");
-                    String deviceData = data.getStringExtra("deviceData"); // may be null
-                    // send back to Dart as a map or JSON string
+                    String deviceData = data.getStringExtra("deviceData");
                     Map<String, Object> resultMap = new HashMap<>();
                     resultMap.put("nonce", nonce);
                     resultMap.put("deviceData", deviceData);
                     activeResult.success(resultMap);
                 } else if (resultCode == Activity.RESULT_CANCELED) {
                     if (data == null || !data.hasExtra("error")) {
-                        Log.w("BT_GOOGLE_PAY", "⚠️ User cancelled Google Pay → returning NULL to Flutter");
+                        Log.w("BT_GOOGLE_PAY", "User cancelled Google Pay flow.");
                         activeResult.success(null);
                     } else {
-                        String error = data.getStringExtra("error");
-                        activeResult.error("canceled", error, null);
+                        activeResult.error("canceled", data.getStringExtra("error"), null);
                     }
                 } else {
                     String error = data != null ? data.getStringExtra("error") : "Unknown error";
@@ -292,15 +264,13 @@ public class FlutterBraintreePlugin implements FlutterPlugin, ActivityAware, Met
                     resultMap.put("deviceData", deviceData);
                     resultMap.put("liabilityShifted", liabilityShifted);
                     resultMap.put("liabilityShiftPossible", liabilityShiftPossible);
-
                     activeResult.success(resultMap);
                 } else if (resultCode == Activity.RESULT_CANCELED) {
                     if (data == null || !data.hasExtra("error")) {
-                        Log.w("BT_CARD_3DS", "⚠️ User cancelled card payment → returning NULL to Flutter");
+                        Log.w("BT_CARD_3DS", "User cancelled card payment flow.");
                         activeResult.success(null);
                     } else {
-                        String error = data.getStringExtra("error");
-                        activeResult.error("canceled", error, null);
+                        activeResult.error("canceled", data.getStringExtra("error"), null);
                     }
                 } else {
                     String error = data != null ? data.getStringExtra("error") : "Unknown card error";
@@ -326,7 +296,6 @@ public class FlutterBraintreePlugin implements FlutterPlugin, ActivityAware, Met
                 }
                 activeResult = null;
                 return true;
-
             default:
                 return false;
         }
@@ -344,4 +313,12 @@ public class FlutterBraintreePlugin implements FlutterPlugin, ActivityAware, Met
         return null;
     }
 
+    private void startActivityForResultSafely(Intent intent, int requestCode) {
+        if (intent.resolveActivity(activity.getPackageManager()) == null) {
+            activeResult.error("activity_not_found", "Unable to launch payment activity.", null);
+            activeResult = null;
+            return;
+        }
+        activity.startActivityForResult(intent, requestCode);
+    }
 }
