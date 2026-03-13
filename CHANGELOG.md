@@ -1,3 +1,9 @@
+## 0.1.4
+
+- Resolved an issue in example app on ios side and updated readme file
+- Made 3D Secure optional, now you can pass true/false to enable/disable 3D Secure for card payment
+- Now you can force 3DS challenge even if authentication is set to frictionless from backend
+
 ## 0.1.3
 
 - Improved stability for ios devices

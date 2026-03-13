@@ -89,9 +89,16 @@ public class FlutterBraintreePlugin implements FlutterPlugin, ActivityAware, Met
                     activeResult = null;
                     return;
                 }
+                Boolean require3DS = call.argument("require3DS");
+                boolean force3DS = require3DS != null && require3DS;
+
+                Boolean forceChallenge = call.argument("forceChallenge");
+                boolean challenge = forceChallenge != null && forceChallenge;
 
                 Intent intent = new Intent(activity, CardPaymentActivity.class);
                 intent.putExtra("authorization", resolvedAuth);
+                intent.putExtra("require3DS", force3DS);
+                intent.putExtra("forceChallenge", challenge);
                 intent.putExtra("cardNumber", (String) request.get("cardNumber"));
                 intent.putExtra("expirationMonth", (String) request.get("expirationMonth"));
                 intent.putExtra("expirationYear", (String) request.get("expirationYear"));

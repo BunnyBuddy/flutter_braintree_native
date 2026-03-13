@@ -2,7 +2,7 @@
 
 A Flutter plugin that wraps the official Braintree Android and iOS native SDKs, enabling fully custom payment flows built with Flutter.
 
-Unlike older plugins, this package does not rely on Braintree’s Drop-In UI. Instead, it exposes native SDK functionality so you can design your own payment experience and stay aligned with modern Braintree integrations.
+Unlike older plugins, this package **does not rely on Braintree’s Drop-In**. Instead, it exposes native SDK functionality so you can design your own payment experience and stay aligned with modern Braintree integrations.
 
 #### This is a community-driven package and is not officially affiliated with Braintree or PayPal.
 

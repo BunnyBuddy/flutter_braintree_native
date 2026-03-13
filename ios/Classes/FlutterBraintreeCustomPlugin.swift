@@ -247,6 +247,9 @@ public class FlutterBraintreeCustomPlugin: BaseFlutterBraintreePlugin, FlutterPl
     // MARK: - CREDIT CARD
 
     private func handleStartCardPayment(_ call: FlutterMethodCall, client: BTAPIClient, result: @escaping FlutterResult) {
+        let args = call.arguments as? [String: Any]
+        let require3DS = args?["require3DS"] as? Bool ?? true
+        let forceChallenge = args?["forceChallenge"] as? Bool ?? false
 
         print("📥 [3DS] Received startCardPayment call")
         guard let cardInfo = dict(for: "request", in: call),
@@ -299,14 +302,46 @@ public class FlutterBraintreeCustomPlugin: BaseFlutterBraintreePlugin, FlutterPl
                 self.isHandlingResult = false
                 return
             }
-
+            
             print("✅ [3DS] Tokenization success → nonce: \(nonce.nonce)")
+            
+            if !require3DS {
+
+                print("⚠️ [3DS] require3DS = false → skipping 3DS flow")
+
+                let dataCollector = BTDataCollector(authorization: client.authorization.originalValue)
+
+                dataCollector.collectDeviceData { deviceData, _ in
+
+                    var response: [String: Any] = [
+                        "nonce": nonce.nonce,
+                        "type": nonce.type,
+                        "description": nonce.description,
+                        "liabilityShifted": false,
+                        "liabilityShiftPossible": false
+                    ]
+
+                    if let deviceData = deviceData {
+                        response["deviceData"] = deviceData
+                    }
+
+                    print("📤 Returning NON-3DS nonce to Flutter")
+
+                    result(response)
+
+                    self.isHandlingResult = false
+                }
+
+                return
+            }
 
             // Build 3DS request
             let threeDSRequest = BTThreeDSecureRequest(
                 amount: amount,
-                nonce: nonce.nonce
+                nonce: nonce.nonce,
+                challengeRequested: forceChallenge
             )
+            
             threeDSRequest.threeDSecureRequestDelegate = self
 
             print("🛡️ [3DS] Built BTThreeDSecureRequest")

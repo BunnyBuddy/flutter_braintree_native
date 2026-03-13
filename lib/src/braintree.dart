@@ -29,6 +29,12 @@ class Braintree {
     return null;
   }
 
+  static String? _validate3DS(bool require3DS, bool forceChallenge) {
+    if (!require3DS && forceChallenge) {
+      return 'forceChallenge cannot be true when require3DS is false';
+    }
+    return null;
+  }
 
   /// Starts a credit/debit card payment using the native Braintree SDK.
   ///
@@ -37,6 +43,24 @@ class Braintree {
   /// - A valid **tokenization key** from your Braintree dashboard.
   ///
   /// The card details are securely passed to the native SDK for tokenization.
+  ///
+  /// ### 3D Secure Options
+  ///
+  /// The payment flow supports optional **3D Secure (3DS)** verification.
+  ///
+  /// - [require3DS]
+  ///   - If `true` (default), the SDK will perform a 3D Secure verification.
+  ///   - If `false`, the card will be tokenized without running 3D Secure.
+  ///
+  /// - [forceChallenge]
+  ///   - If `true`, the SDK will request that the issuing bank **forces a 3DS challenge**
+  ///     (e.g. OTP, biometric, banking app confirmation). It'll only work if [require3DS] is also set to true.
+  ///   - If `false` (default), the issuer may perform a **frictionless authentication**
+  ///     when possible.
+  ///
+  /// ⚠️ Note:
+  /// Even if `forceChallenge` is `true`, the issuing bank ultimately decides whether
+  /// a challenge is required.
   ///
   /// Returns:
   /// - A `Map<String, dynamic>` containing:
@@ -57,20 +81,25 @@ class Braintree {
     required String expirationYear,
     required String cvv,
     required String amount,
+    bool require3DS = true,
+    bool forceChallenge = false,
   }) async {
+    final threeDSError = _validate3DS(require3DS, forceChallenge);
+    if (threeDSError != null) {
+      return {'error': threeDSError};
+    }
+
     final authError = _validateRequired('authorization', authorization);
     if (authError != null) return {'error': authError};
-    if (_validateRequired('cardNumber', cardNumber) != null ||
-        _validateRequired('expirationMonth', expirationMonth) != null ||
-        _validateRequired('expirationYear', expirationYear) != null ||
-        _validateRequired('cvv', cvv) != null ||
-        _validateRequired('amount', amount) != null) {
+    if (_validateRequired('cardNumber', cardNumber) != null || _validateRequired('expirationMonth', expirationMonth) != null || _validateRequired('expirationYear', expirationYear) != null || _validateRequired('cvv', cvv) != null || _validateRequired('amount', amount) != null) {
       return {'error': 'Card fields must not be empty'};
     }
 
     try {
       final result = await _kChannel.invokeMethod('startCardPayment', {
         'authorization': authorization,
+        'require3DS': require3DS,
+        'forceChallenge': forceChallenge,
         'request': {
           'cardNumber': cardNumber,
           'expirationMonth': expirationMonth,
@@ -96,6 +125,24 @@ class Braintree {
   /// Billing fields such as [streetAddress] and [postalCode] are optional
   /// but may improve fraud detection and 3D Secure verification.
   ///
+  /// ### 3D Secure Options
+  ///
+  /// The payment flow supports optional **3D Secure (3DS)** verification.
+  ///
+  /// - [require3DS]
+  ///   - If `true` (default), the SDK will perform a 3D Secure verification.
+  ///   - If `false`, the card will be tokenized without running 3D Secure.
+  ///
+  /// - [forceChallenge]
+  ///   - If `true`, the SDK will request that the issuing bank **forces a 3DS challenge**
+  ///     (e.g. OTP, biometric, banking app confirmation). It'll only work if [require3DS] is also set to true.
+  ///   - If `false` (default), the issuer may perform a **frictionless authentication**
+  ///     when possible.
+  ///
+  /// ⚠️ Note:
+  /// Even if `forceChallenge` is `true`, the issuing bank ultimately decides whether
+  /// a challenge is required.
+  ///
   /// Returns:
   /// - A `Map<String, dynamic>` containing:
   ///     - `nonce` → The payment method nonce.
@@ -114,22 +161,27 @@ class Braintree {
     required String expirationYear,
     required String cvv,
     required String amount,
+    bool require3DS = true,
+    bool forceChallenge = false,
     String? streetAddress,
     String? postalCode,
   }) async {
+    final threeDSError = _validate3DS(require3DS, forceChallenge);
+    if (threeDSError != null) {
+      return {'error': threeDSError};
+    }
+
     final authError = _validateRequired('authorization', authorization);
     if (authError != null) return {'error': authError};
-    if (_validateRequired('cardNumber', cardNumber) != null ||
-        _validateRequired('expirationMonth', expirationMonth) != null ||
-        _validateRequired('expirationYear', expirationYear) != null ||
-        _validateRequired('cvv', cvv) != null ||
-        _validateRequired('amount', amount) != null) {
+    if (_validateRequired('cardNumber', cardNumber) != null || _validateRequired('expirationMonth', expirationMonth) != null || _validateRequired('expirationYear', expirationYear) != null || _validateRequired('cvv', cvv) != null || _validateRequired('amount', amount) != null) {
       return {'error': 'Card fields must not be empty'};
     }
 
     try {
       final result = await _kChannel.invokeMethod('startCardPayment', {
         'authorization': authorization,
+        'require3DS': require3DS,
+        'forceChallenge': forceChallenge,
         'request': {
           'cardNumber': cardNumber,
           'expirationMonth': expirationMonth,
@@ -207,10 +259,7 @@ class Braintree {
     String currencyCode = 'USD',
     String? merchantIdentifier,
   }) async {
-    if (_validateRequired('tokenizationKey', tokenizationKey) != null ||
-        _validateRequired('amount', amount) != null ||
-        _validateRequired('displayName', displayName) != null ||
-        _validateRequired('companyName', companyName) != null) {
+    if (_validateRequired('tokenizationKey', tokenizationKey) != null || _validateRequired('amount', amount) != null || _validateRequired('displayName', displayName) != null || _validateRequired('companyName', companyName) != null) {
       return {'error': 'Apple Pay fields must not be empty'};
     }
 
@@ -277,8 +326,7 @@ class Braintree {
     String? amount, // "10.00"
     String usage = "SINGLE_USE", // or "MULTI_USE"
   }) async {
-    if (_validateRequired('tokenizationKey', tokenizationKey) != null ||
-        _validateRequired('appLinkUrl', appLinkUrl) != null) {
+    if (_validateRequired('tokenizationKey', tokenizationKey) != null || _validateRequired('appLinkUrl', appLinkUrl) != null) {
       return {'error': 'tokenizationKey and appLinkUrl must not be empty'};
     }
 
@@ -326,11 +374,7 @@ class Braintree {
     required String merchantName,
     required String environment, // "TEST" or "PRODUCTION"
   }) async {
-    if (_validateRequired('tokenizationKey', tokenizationKey) != null ||
-        _validateRequired('amount', amount) != null ||
-        _validateRequired('currencyCode', currencyCode) != null ||
-        _validateRequired('merchantName', merchantName) != null ||
-        _validateRequired('environment', environment) != null) {
+    if (_validateRequired('tokenizationKey', tokenizationKey) != null || _validateRequired('amount', amount) != null || _validateRequired('currencyCode', currencyCode) != null || _validateRequired('merchantName', merchantName) != null || _validateRequired('environment', environment) != null) {
       return {'error': 'Google Pay fields must not be empty'};
     }
 
@@ -383,9 +427,7 @@ class Braintree {
     required String returnUrl,
     bool hasUserLocationConsent = false,
   }) async {
-    if (_validateRequired('authorization', authorization) != null ||
-        _validateRequired('amount', amount) != null ||
-        _validateRequired('returnUrl', returnUrl) != null) {
+    if (_validateRequired('authorization', authorization) != null || _validateRequired('amount', amount) != null || _validateRequired('returnUrl', returnUrl) != null) {
       return {'error': 'authorization, amount and returnUrl must not be empty'};
     }
 
@@ -406,5 +448,4 @@ class Braintree {
     }
     return null;
   }
-
 }
