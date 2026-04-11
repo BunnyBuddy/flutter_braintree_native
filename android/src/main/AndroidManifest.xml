@@ -19,7 +19,7 @@
             android:launchMode="singleTop"
             android:windowSoftInputMode="adjustResize" />
 
-        <!-- For PayPal -->
+        <!-- For PayPal Checkout -->
         <activity
             android:name=".PayPalCheckoutActivity"
             android:exported="true"
@@ -37,6 +37,22 @@
 
         </activity>
 
+        <!-- For PayPal Recurring -->
+        <activity
+            android:name=".PayPalRecurringActivity"
+            android:exported="true"
+            android:theme="@style/bt_transparent_activity"
+            android:launchMode="singleTop"
+            android:windowSoftInputMode="adjustResize">
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="${applicationId}.braintree" />
+            </intent-filter>
+
+        </activity>
 
         <!-- For Card -->
         <activity

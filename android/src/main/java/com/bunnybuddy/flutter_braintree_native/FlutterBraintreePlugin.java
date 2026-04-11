@@ -24,6 +24,7 @@ public class FlutterBraintreePlugin implements FlutterPlugin, ActivityAware, Met
     private static final int CREDIT_CARD_REQUEST_CODE = 0x888;
     private static final int VENMO_REQUEST_CODE = 0x550;
     private static final int PAYPAL_REQUEST_CODE = 0x777;
+    private static final int PAYPAL_RECURRING_REQUEST_CODE = 0x778;
     private Activity activity;
     private Result activeResult;
     private MethodChannel channel;
@@ -178,6 +179,28 @@ public class FlutterBraintreePlugin implements FlutterPlugin, ActivityAware, Met
                 intent.putExtra("hasUserLocationConsent", userLocationConsent != null && userLocationConsent);
                 startActivityForResultSafely(intent, PAYPAL_REQUEST_CODE);
             }
+            case "startPayPalRecurring" -> {
+                String resolvedAuth = resolveAuthorization(call);
+                if (resolvedAuth == null) {
+                    activeResult.error("braintree_error", "Authorization not specified", null);
+                    activeResult = null;
+                    return;
+                }
+
+                String amount = call.argument("amount");
+                String planName = call.argument("planName");
+                String returnUrl = call.argument("returnUrl");
+                Boolean userLocationConsent = call.argument("hasUserLocationConsent");
+
+                Intent intent = new Intent(activity, PayPalRecurringActivity.class);
+                intent.putExtra("amount", amount);
+                intent.putExtra("planeName", planName);
+                intent.putExtra("authorization", resolvedAuth);
+                intent.putExtra("returnUrl", returnUrl);
+                intent.putExtra("hasUserLocationConsent", userLocationConsent != null && userLocationConsent);
+
+                startActivityForResultSafely(intent, PAYPAL_RECURRING_REQUEST_CODE);
+            }
             default -> {
                 result.notImplemented();
                 activeResult = null;
@@ -236,6 +259,41 @@ public class FlutterBraintreePlugin implements FlutterPlugin, ActivityAware, Met
                     String error = data != null ? data.getStringExtra("error") : "Unknown PayPal error";
                     activeResult.error("error", error, null);
                 }
+                activeResult = null;
+                return true;
+            case PAYPAL_RECURRING_REQUEST_CODE:
+                if (resultCode == Activity.RESULT_OK && data != null) {
+
+                    String firstName = data.getStringExtra("firstName");
+                    String lastName = data.getStringExtra("lastName");
+                    String nonce = data.getStringExtra("nonce");
+                    String email = data.getStringExtra("email");
+                    String payerId = data.getStringExtra("payerId");
+                    String deviceData = data.getStringExtra("deviceData");
+
+                    Map<String, Object> resultMap = new HashMap<>();
+                    resultMap.put("firstName", firstName);
+                    resultMap.put("lastName", lastName);
+                    resultMap.put("nonce", nonce);
+                    resultMap.put("email", email);
+                    resultMap.put("payerId", payerId);
+                    resultMap.put("deviceData", deviceData);
+
+                    activeResult.success(resultMap);
+
+                } else if (resultCode == Activity.RESULT_CANCELED) {
+
+                    if (data == null || !data.hasExtra("error")) {
+                        activeResult.success(null);
+                    } else {
+                        activeResult.error("canceled", data.getStringExtra("error"), null);
+                    }
+
+                } else {
+                    String error = data != null ? data.getStringExtra("error") : "Unknown error";
+                    activeResult.error("error", error, null);
+                }
+
                 activeResult = null;
                 return true;
             case GOOGLE_PAY_REQUEST_CODE:

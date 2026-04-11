@@ -448,4 +448,71 @@ class Braintree {
     }
     return null;
   }
+
+  /// Starts a PayPal recurring (subscription) flow using the native Braintree SDK.
+  ///
+  /// This flow creates a **billing agreement** with the user's PayPal account,
+  /// allowing your backend to charge the user in the future without requiring
+  /// them to re-authenticate.
+  ///
+  /// ⚠️ This method does NOT charge the user immediately.
+  /// It only returns a payment method nonce that must be sent to your backend
+  /// to create a payment method and perform recurring billing.
+  ///
+  /// Parameters:
+  /// - [authorization] → A client token or tokenization key from your backend.
+  /// - [amount] → Subscription amount as a string (e.g., "4.97").
+  /// - [planName] → Name of the subscription plan shown to the user (e.g., "Premium Plan").
+  /// - [returnUrl] → Must match your app's deep link / app link configuration
+  ///   (e.g., "com.yourapp.braintree://paypal").
+  /// - [hasUserLocationConsent] → Whether the user has consented to location usage
+  ///   (required for PayPal fraud detection compliance).
+  ///
+  /// Returns:
+  /// - A `Map<String, dynamic>` containing:
+  ///     - `nonce` → Payment method nonce (billing agreement token).
+  ///     - `email` → PayPal account email (if available).
+  ///     - `payerId` → PayPal payer ID.
+  ///     - `deviceData` → Fraud detection device data (if collected).
+  /// - A map containing `error` if a platform error occurs.
+  /// - `null` if the user cancels the flow.
+  ///
+  /// ⚠️ IMPORTANT:
+  /// - You MUST send the returned nonce to your backend.
+  /// - Your backend must:
+  ///     1. Create a payment method using the nonce.
+  ///     2. Store the payment method token.
+  ///     3. Charge the user on a recurring basis (e.g., monthly).
+  ///
+  /// ⚠️ PayPal does NOT automatically handle subscriptions in this flow.
+  /// You are responsible for implementing:
+  /// - Subscription status (active/canceled)
+  /// - Billing schedule
+  /// - Retry logic for failed payments
+  ///
+  /// ⚠️ The return URL must match your AndroidManifest or iOS URL scheme configuration.
+  static Future<Map<String, dynamic>?> startPayPalSubscription({
+    required String authorization,
+    required String returnUrl,
+    required String amount,
+    required String planName,
+    bool hasUserLocationConsent = false,
+  }) async {
+    try {
+      final result = await _kChannel.invokeMethod('startPayPalRecurring', {
+        'authorization': authorization,
+        'returnUrl': returnUrl,
+        'amount': amount,
+        'planName': planName,
+        'hasUserLocationConsent': hasUserLocationConsent,
+      });
+
+      if (result != null && result is Map) {
+        return Map<String, dynamic>.from(result);
+      }
+    } on PlatformException catch (e) {
+      return {'error': e.message};
+    }
+    return null;
+  }
 }
