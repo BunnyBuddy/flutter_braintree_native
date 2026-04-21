@@ -67,7 +67,16 @@
             android:name=".VenmoActivity"
             android:exported="true"
             android:theme="@style/bt_transparent_activity"
-            android:launchMode="singleTop" />
+            android:launchMode="singleTop">
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="${applicationId}.braintree" />
+            </intent-filter>
+
+        </activity>
 
     </application>
 

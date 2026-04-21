@@ -15,7 +15,7 @@ public class FlutterBraintreeCustomPlugin: BaseFlutterBraintreePlugin, FlutterPl
     var applePayClient: BTApplePayClient?
     var paymentRequest: PKPaymentRequest?
     var threeDSClient: BTThreeDSecureClient?
-
+    var universalLinkURL: URL?
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(
@@ -188,7 +188,7 @@ public class FlutterBraintreeCustomPlugin: BaseFlutterBraintreePlugin, FlutterPl
         let usage = args["usage"] as? String,
         let amount = args["amount"] as? String,
         let universalLinkStr = args["appLinkUrl"] as? String,
-        let universalReturnURL = URL(string: universalLinkStr) else {
+        let universalReturnURL = URL(string: universalLinkStr + "/braintree") else {
             result(FlutterError(
                 code: "INVALID_ARGS",
                 message: "Missing Venmo params (amount, usage, universalLink)",
@@ -197,6 +197,7 @@ public class FlutterBraintreeCustomPlugin: BaseFlutterBraintreePlugin, FlutterPl
             self.isHandlingResult = false
             return
         }
+        self.universalLinkURL = universalReturnURL
 
         let venmoClient = BTVenmoClient(
             authorization: client.authorization.originalValue,
