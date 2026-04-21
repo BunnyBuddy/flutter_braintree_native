@@ -1,3 +1,8 @@
+## 0.1.5
+
+- Updated android side Braintree dependencies
+- Updated code for Venmo on both sides android and ios + added universal link support
+
 ## 0.1.4
 
 - Resolved an issue in example app on ios side and updated readme file

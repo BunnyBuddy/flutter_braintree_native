@@ -115,6 +115,20 @@ options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
     }
     return super.application(app, open: url, options: options)
 }
+
+override func application(
+_ application: UIApplication,
+continue userActivity: NSUserActivity,
+restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void
+) -> Bool {
+
+    guard userActivity.activityType == NSUserActivityTypeBrowsingWeb,
+    let url = userActivity.webpageURL else {
+        return false
+    }
+
+    return BTAppContextSwitcher.sharedInstance.handleOpen(url)
+}
 ```
 
 #### Return URL Configuration
