@@ -65,7 +65,8 @@ public class VenmoActivity extends AppCompatActivity {
         venmoClient = new VenmoClient(
                 this,
                 authorization,
-                Uri.parse(appLinkUrl)
+                Uri.parse(appLinkUrl + ".braintree"),
+                getPackageName() + ".braintree"
         );
 
         startVenmoFlow();
@@ -96,6 +97,12 @@ public class VenmoActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent); // VERY IMPORTANT
     }
 
     @Override

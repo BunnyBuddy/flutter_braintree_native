@@ -45,7 +45,7 @@ open class BaseFlutterBraintreePlugin: NSObject {
     }
 
     internal func returnAlreadyOpenError(result: FlutterResult) {
-        result(FlutterError(code: "drop_in_already_running", message: "Cannot launch another Drop-in activity while one is already running.", details: nil));
+        result(FlutterError(code: "already_running", message: "Cannot launch another activity while one is already running.", details: nil));
     }
 
     internal func string(for key: String, in call: FlutterMethodCall) -> String? {
