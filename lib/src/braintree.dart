@@ -36,43 +36,68 @@ class Braintree {
     return null;
   }
 
-  /// Starts a credit/debit card payment using the native Braintree SDK.
+  /// Starts a credit/debit card payment using the native Braintree SDK,
+  /// with optional billing and customer information.
   ///
   /// The [authorization] must be either:
   /// - A valid **client token** generated from your backend, or
   /// - A valid **tokenization key** from your Braintree dashboard.
   ///
-  /// The card details are securely passed to the native SDK for tokenization.
+  /// The card details are securely tokenized by the native Braintree SDK.
+  ///
+  /// ## Billing Information
+  ///
+  /// Supplying billing and customer information is optional, but recommended,
+  /// especially when using **3D Secure (3DS)**. Providing accurate billing
+  /// details may improve issuer authentication, fraud detection, and increase
+  /// the likelihood of a frictionless authentication.
+  ///
+  /// Available billing fields:
+  ///
+  /// - [billingAddress] → Street address.
+  /// - [billingZipCode] → ZIP / Postal code.
+  /// - [billingCity] → Billing city.
+  /// - [billingCountryCode] → ISO 3166-1 alpha-2 country code
+  ///   (e.g. `"US"`, `"GB"`, `"PK"`).
+  /// - [billingFirstName] → Cardholder's first name.
+  /// - [billingLastName] → Cardholder's last name.
+  /// - [billingPhoneNumber] → Cardholder's phone number.
+  /// - [email] → Cardholder's email address.
   ///
   /// ### 3D Secure Options
   ///
   /// The payment flow supports optional **3D Secure (3DS)** verification.
   ///
   /// - [require3DS]
-  ///   - If `true` (default), the SDK will perform a 3D Secure verification.
-  ///   - If `false`, the card will be tokenized without running 3D Secure.
+  ///   - If `true` (default), the SDK performs a 3D Secure authentication.
+  ///   - If `false`, the card is tokenized without performing 3D Secure.
   ///
   /// - [forceChallenge]
-  ///   - If `true`, the SDK will request that the issuing bank **forces a 3DS challenge**
-  ///     (e.g. OTP, biometric, banking app confirmation). It'll only work if [require3DS] is also set to true.
-  ///   - If `false` (default), the issuer may perform a **frictionless authentication**
-  ///     when possible.
+  ///   - If `true`, the SDK requests that the issuing bank presents a
+  ///     challenge (OTP, banking app approval, biometric verification, etc.).
+  ///     This option only has an effect when [require3DS] is `true`.
+  ///   - If `false` (default), the issuer may perform a frictionless
+  ///     authentication whenever possible.
   ///
-  /// ⚠️ Note:
-  /// Even if `forceChallenge` is `true`, the issuing bank ultimately decides whether
-  /// a challenge is required.
+  /// ⚠️ Even when `forceChallenge` is `true`, the issuing bank makes the
+  /// final decision whether to display a challenge.
   ///
   /// Returns:
   /// - A `Map<String, dynamic>` containing:
   ///     - `nonce` → The payment method nonce.
   ///     - `deviceData` → Fraud detection device data (if available).
-  ///     - `liabilityShifted` → Whether 3D Secure liability shift occurred.
+  ///     - `liabilityShifted` → Whether liability shifted after successful
+  ///       3D Secure authentication.
   ///     - `liabilityShiftPossible` → Whether liability shift was possible.
   /// - A map containing `error` if a platform error occurs.
   /// - `null` if the user cancels the payment flow.
   ///
-  /// ⚠️ You must send the returned nonce to your backend to create a transaction.
-  /// Never complete transactions directly from the client.
+  /// ⚠️ Always send the returned nonce to your backend to create or authorize
+  /// a transaction. Never process payments directly from the client.
+
+  /// Since v0.1.6, billing information can be supplied directly using this
+  /// method. The separate startCardPaymentWithBilling() method has been
+  /// deprecated and will be removed in the next major release.
 
   static Future<Map<String, dynamic>?> startCardPayment({
     required String authorization,
@@ -81,6 +106,16 @@ class Braintree {
     required String expirationYear,
     required String cvv,
     required String amount,
+
+    String? billingAddress,
+    String? billingZipCode,
+    String? billingCity,
+    String? billingCountryCode,
+    String? billingFirstName,
+    String? billingLastName,
+    String? billingPhoneNumber,
+    String? email,
+
     bool require3DS = true,
     bool forceChallenge = false,
   }) async {
@@ -91,7 +126,12 @@ class Braintree {
 
     final authError = _validateRequired('authorization', authorization);
     if (authError != null) return {'error': authError};
-    if (_validateRequired('cardNumber', cardNumber) != null || _validateRequired('expirationMonth', expirationMonth) != null || _validateRequired('expirationYear', expirationYear) != null || _validateRequired('cvv', cvv) != null || _validateRequired('amount', amount) != null) {
+
+    if (_validateRequired('cardNumber', cardNumber) != null ||
+        _validateRequired('expirationMonth', expirationMonth) != null ||
+        _validateRequired('expirationYear', expirationYear) != null ||
+        _validateRequired('cvv', cvv) != null ||
+        _validateRequired('amount', amount) != null) {
       return {'error': 'Card fields must not be empty'};
     }
 
@@ -106,6 +146,15 @@ class Braintree {
           'expirationYear': expirationYear,
           'cvv': cvv,
           'amount': amount,
+
+          'billingAddress': billingAddress,
+          'billingZipCode': billingZipCode,
+          'billingCity': billingCity,
+          'billingCountryCode': billingCountryCode,
+          'billingFirstName': billingFirstName,
+          'billingLastName': billingLastName,
+          'billingPhoneNumber': billingPhoneNumber,
+          'email': email,
         },
       });
 
@@ -115,45 +164,23 @@ class Braintree {
     } on PlatformException catch (e) {
       return {'error': e.message};
     }
+
     return null;
   }
 
-  /// Starts a credit card payment with optional billing address information.
-  ///
-  /// The [authorization] must be a valid client token or tokenization key.
-  ///
-  /// Billing fields such as [streetAddress] and [postalCode] are optional
-  /// but may improve fraud detection and 3D Secure verification.
-  ///
-  /// ### 3D Secure Options
-  ///
-  /// The payment flow supports optional **3D Secure (3DS)** verification.
-  ///
-  /// - [require3DS]
-  ///   - If `true` (default), the SDK will perform a 3D Secure verification.
-  ///   - If `false`, the card will be tokenized without running 3D Secure.
-  ///
-  /// - [forceChallenge]
-  ///   - If `true`, the SDK will request that the issuing bank **forces a 3DS challenge**
-  ///     (e.g. OTP, biometric, banking app confirmation). It'll only work if [require3DS] is also set to true.
-  ///   - If `false` (default), the issuer may perform a **frictionless authentication**
-  ///     when possible.
-  ///
-  /// ⚠️ Note:
-  /// Even if `forceChallenge` is `true`, the issuing bank ultimately decides whether
-  /// a challenge is required.
-  ///
-  /// Returns:
-  /// - A `Map<String, dynamic>` containing:
-  ///     - `nonce` → The payment method nonce.
-  ///     - `deviceData` → Fraud detection device data (if available).
-  ///     - `liabilityShifted` → Whether 3D Secure liability shift occurred.
-  ///     - `liabilityShiftPossible` → Whether liability shift was possible.
-  /// - A map containing `error` if a platform error occurs.
-  /// - `null` if the user cancels the payment flow.
-  ///
-  /// ⚠️ Always verify the nonce securely on your backend before completing payment.
 
+  /// @deprecated
+  /// Use [startCardPayment] instead.
+  ///
+  /// Billing information is now supported directly by
+  /// [startCardPayment]. This method simply forwards all
+  /// arguments and will be removed in the next major release.
+
+  @Deprecated(
+    'Use startCardPayment() instead. '
+        'Billing information is now supported directly by startCardPayment(). '
+        'This method will be removed in the next major release.',
+  )
   static Future<Map<String, dynamic>?> startCardPaymentWithBilling({
     required String authorization,
     required String cardNumber,
@@ -161,45 +188,39 @@ class Braintree {
     required String expirationYear,
     required String cvv,
     required String amount,
+
+    String? billingAddress,
+    String? billingZipCode,
+    String? billingCity,
+    String? billingCountryCode,
+    String? billingFirstName,
+    String? billingLastName,
+    String? billingPhoneNumber,
+    String? email,
+
     bool require3DS = true,
     bool forceChallenge = false,
-    String? streetAddress,
-    String? postalCode,
-  }) async {
-    final threeDSError = _validate3DS(require3DS, forceChallenge);
-    if (threeDSError != null) {
-      return {'error': threeDSError};
-    }
+  }) {
+    return startCardPayment(
+      authorization: authorization,
+      cardNumber: cardNumber,
+      expirationMonth: expirationMonth,
+      expirationYear: expirationYear,
+      cvv: cvv,
+      amount: amount,
 
-    final authError = _validateRequired('authorization', authorization);
-    if (authError != null) return {'error': authError};
-    if (_validateRequired('cardNumber', cardNumber) != null || _validateRequired('expirationMonth', expirationMonth) != null || _validateRequired('expirationYear', expirationYear) != null || _validateRequired('cvv', cvv) != null || _validateRequired('amount', amount) != null) {
-      return {'error': 'Card fields must not be empty'};
-    }
+      billingAddress: billingAddress,
+      billingZipCode: billingZipCode,
+      billingCity: billingCity,
+      billingCountryCode: billingCountryCode,
+      billingFirstName: billingFirstName,
+      billingLastName: billingLastName,
+      billingPhoneNumber: billingPhoneNumber,
+      email: email,
 
-    try {
-      final result = await _kChannel.invokeMethod('startCardPayment', {
-        'authorization': authorization,
-        'require3DS': require3DS,
-        'forceChallenge': forceChallenge,
-        'request': {
-          'cardNumber': cardNumber,
-          'expirationMonth': expirationMonth,
-          'expirationYear': expirationYear,
-          'cvv': cvv,
-          'amount': amount,
-          'streetAddress': streetAddress,
-          'postalCode': postalCode,
-        },
-      });
-
-      if (result != null && result is Map) {
-        return Map<String, dynamic>.from(result);
-      }
-    } on PlatformException catch (e) {
-      return {'error': e.message};
-    }
-    return null;
+      require3DS: require3DS,
+      forceChallenge: forceChallenge,
+    );
   }
 
   /// Collects device data using Braintree's fraud detection tools.

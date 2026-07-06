@@ -261,9 +261,6 @@ public class FlutterBraintreeCustomPlugin: BaseFlutterBraintreePlugin, FlutterPl
             return
         }
 
-        print("💳 [3DS] Card Info received: \(cardInfo)")
-        print("💳 [3DS] Card Token: \(client.authorization.originalValue)")
-
         // Build card
         guard let number = cardInfo["cardNumber"] as? String,
         let month = cardInfo["expirationMonth"] as? String,
@@ -279,8 +276,8 @@ public class FlutterBraintreeCustomPlugin: BaseFlutterBraintreePlugin, FlutterPl
             expirationMonth: month,
             expirationYear: year,
             cvv: cvv,
-            postalCode: cardInfo["postalCode"] as? String,
-            streetAddress: cardInfo["streetAddress"] as? String
+            postalCode: cardInfo["billingZipCode"] as? String,
+            streetAddress: cardInfo["billingAddress"] as? String
         )
 
         print("🔧 [3DS] Starting card tokenization…")
@@ -326,7 +323,7 @@ public class FlutterBraintreeCustomPlugin: BaseFlutterBraintreePlugin, FlutterPl
                         response["deviceData"] = deviceData
                     }
 
-                    print("📤 Returning NON-3DS nonce to Flutter")
+                    print("📤 Returning NON-3DS nonce")
 
                     result(response)
 
@@ -337,15 +334,27 @@ public class FlutterBraintreeCustomPlugin: BaseFlutterBraintreePlugin, FlutterPl
             }
 
             // Build 3DS request
+            let billingAddress = BTThreeDSecurePostalAddress(
+                givenName: cardInfo["billingFirstName"] as? String,
+                surname: cardInfo["billingLastName"] as? String,
+                streetAddress: cardInfo["billingAddress"] as? String,
+                locality: cardInfo["billingCity"] as? String,
+                postalCode: cardInfo["billingZipCode"] as? String,
+                countryCodeAlpha2: cardInfo["billingCountryCode"] as? String,
+                phoneNumber: cardInfo["billingPhoneNumber"] as? String
+            )
+
             let threeDSRequest = BTThreeDSecureRequest(
                 amount: amount,
                 nonce: nonce.nonce,
-                challengeRequested: forceChallenge
+                billingAddress: billingAddress,
+                challengeRequested: forceChallenge,
+                email: cardInfo["email"] as? String
             )
-            
-            threeDSRequest.threeDSecureRequestDelegate = self
 
-            print("🛡️ [3DS] Built BTThreeDSecureRequest")
+            threeDSRequest.threeDSecureRequestDelegate = self
+            
+            print("BT_CARD_3DS: Starting 3DS flow")
             print("   - Amount: \(amount)")
             print("   - Nonce: \(nonce.nonce)")
 
@@ -354,7 +363,9 @@ public class FlutterBraintreeCustomPlugin: BaseFlutterBraintreePlugin, FlutterPl
                 authorization: client.authorization.originalValue
             )
 
-            print("🛑 [3DS] Created ThreeDSClient → retained strongly")
+            print("BT_CARD_3DS: ThreeDS client initialized")
+            print("BT_CARD_3DS: Challenge Requested = \(forceChallenge)")
+            print("BT_CARD_3DS: Require 3DS = \(require3DS)")
 
             self.threeDSClient?.start(threeDSRequest) {
                 threeDSResult, error in
@@ -363,8 +374,8 @@ public class FlutterBraintreeCustomPlugin: BaseFlutterBraintreePlugin, FlutterPl
 
                     // 1) Direct cast to enum (works if the SDK returns the Swift enum).
                     if let tdsError = error as? BTThreeDSecureError, tdsError == .canceled {
-                        print("🚫 [3DS] User cancelled challenge (BTThreeDSecureError.canceled). Returning nil to Flutter.")
-                        result(nil)                       // signal cancellation to Flutter
+                        print("🚫 [3DS] User cancelled challenge (BTThreeDSecureError.canceled). Returning nil.")
+                        result(nil)                       // signal cancellation
                         self.isHandlingResult = false
                         self.threeDSClient = nil
                         return
@@ -373,7 +384,7 @@ public class FlutterBraintreeCustomPlugin: BaseFlutterBraintreePlugin, FlutterPl
                     // 2) Fallback to NSError domain + code (covers bridged NSError cases)
                     let nsError = error as NSError
                     if nsError.domain == BTThreeDSecureError.errorDomain && nsError.code == BTThreeDSecureError.canceled.errorCode {
-                        print("🚫 [3DS] User cancelled challenge (NSError bridged). Returning nil to Flutter.")
+                        print("🚫 [3DS] User cancelled challenge (NSError bridged). Returning nil.")
                         result(nil)
                         self.isHandlingResult = false
                         self.threeDSClient = nil
@@ -398,7 +409,7 @@ public class FlutterBraintreeCustomPlugin: BaseFlutterBraintreePlugin, FlutterPl
                     return
                 }
 
-                print("🎉 [3DS] 3DS Authentication SUCCESS")
+                print("BT_CARD_3DS: 3DS authentication succeeded")
                 print("   - Verified nonce: \(verifiedCard.nonce)")
                 print("   - Type: \(verifiedCard.type)")
                 print("   - Description: \(verifiedCard.description)")
@@ -406,7 +417,7 @@ public class FlutterBraintreeCustomPlugin: BaseFlutterBraintreePlugin, FlutterPl
                 print("   - Liability Shift Possible: \(verifiedCard.threeDSecureInfo.liabilityShiftPossible)")
 
                 // Device data collection
-                print("📡 [3DS] Collecting device data…")
+                print("BT_CARD_3DS: Collecting device data")
 
                 let dataCollector = BTDataCollector(authorization: client.authorization.originalValue)
                 dataCollector.collectDeviceData {
@@ -427,7 +438,7 @@ public class FlutterBraintreeCustomPlugin: BaseFlutterBraintreePlugin, FlutterPl
                         response["deviceData"] = deviceData
                     }
 
-                    print("📤 [3DS] Sending final response back to Flutter")
+                    print("📤 [3DS] Sending final response back")
                     result(response)
 
                     self.isHandlingResult = false
@@ -435,7 +446,7 @@ public class FlutterBraintreeCustomPlugin: BaseFlutterBraintreePlugin, FlutterPl
                 }
             }
 
-            print("🚀 [3DS] Starting 3DS2 flow…")
+            print("BT_CARD_3DS: Starting 3DS authentication")
 
         }
     }
@@ -450,7 +461,7 @@ public class FlutterBraintreeCustomPlugin: BaseFlutterBraintreePlugin, FlutterPl
 
         print("🍏 Starting Apple Pay flow")
 
-        // Read "request" dictionary from Flutter
+        // Read "request" dictionary
         guard let args = call.arguments as? [String: Any],
         let info = args["request"] as? [String: Any],
         let amount = info["amount"] as? String,
@@ -566,7 +577,7 @@ public class FlutterBraintreeCustomPlugin: BaseFlutterBraintreePlugin, FlutterPl
             }
 
             // Collect device data (fraud)
-            print("📡 Collecting device data…")
+            print("BT_APPLE_PAY: Collecting device data")
             let dataCollector = BTDataCollector(authorization: self.braintreeClient!.authorization.originalValue)
 
             dataCollector.collectDeviceData {
@@ -583,7 +594,7 @@ public class FlutterBraintreeCustomPlugin: BaseFlutterBraintreePlugin, FlutterPl
                     "deviceData": deviceData ?? ""
                 ]
 
-                print("📤 Returning Apple Pay nonce to Flutter")
+                print("📤 Returning Apple Pay nonce")
                 self.applePayCompletion? (dict)
 
                 completion(PKPaymentAuthorizationResult(status: .success, errors: nil))
@@ -631,7 +642,7 @@ extension FlutterBraintreeCustomPlugin: BTThreeDSecureRequestDelegate {
         print("   • requiresUserAuthentication: \(lookup.requiresUserAuthentication)")
         print("   • isThreeDSecureVersion2: \(lookup.isThreeDSecureVersion2)")
         print("   • threeDSecureVersion: \(lookup.threeDSecureVersion ?? "nil")")
-        print("   • transactionID: \(lookup.transactionID ?? "nil")")
+//        print("   • transactionID: \(lookup.transactionID ?? "nil")")
         print("   • acsURL: \(lookup.acsURL?.absoluteString ?? "nil")")
         print("   • termURL: \(lookup.termURL?.absoluteString ?? "nil")")
         print("   • paReq present: \(lookup.paReq != nil)")

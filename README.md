@@ -10,13 +10,13 @@ Special thanks to [Pikaju](https://github.com/pikaju)
 for the original Drop-In based implementation that inspired me to do this apparent rewrite.
 
 | Platform | Card | PayPal | Google Pay | Venmo | Apple Pay |
-|--------|------|--------|-----------|-----|----------|
-| Android | ✅ | ✅ | ✅ | ✅ | ❌ |
-| iOS | ✅ | ✅ | ❌ | ✅ | ✅ |
+|----------|------|--------|------------|-------|-----------|
+| Android  | ✅    | ✅      | ✅          | ✅     | ❌         |
+| iOS      | ✅    | ✅      | ❌          | ✅     | ✅         |
 
 ## ✨ Features
 
-1. 💳 Credit Card payments (with optional 3D Secure and with optional billing address)
+1. 💳 Credit Card payments (optional 3D Secure, optional billing & customer information)
 2. 🅿️ PayPal Checkout
 3. 𝐠 Google Pay (Android)
 4.  Apple Pay (IOS)
@@ -96,8 +96,6 @@ Example:
 3. Upload the certificate to:
 4. Braintree Control Panel → Processing → Apple Pay
 
-**Warning:** Device data collection is not yet supported for iOS.
-
 ### For PayPal / Venmo / 3D Secure
 
 ⚠️ **Important:** Upon cancellation (user canceled the operation/payment) Venmo doesn't return null, (we handled user cancellation like this only for Venmo, the rest of the payment methods return null). It returns an error with the message "User canceled Venmo".
@@ -130,6 +128,64 @@ restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void
     return BTAppContextSwitcher.sharedInstance.handleOpen(url)
 }
 ```
+
+## Credit/Debit Card
+
+```dart
+final result = await Braintree.startCardPayment(
+  authorization: clientToken,
+  cardNumber: "4111111111111111",
+  expirationMonth: "12",
+  expirationYear: "2028",
+  cvv: "123",
+  amount: "10.00",
+
+  // Optional
+  billingFirstName: "John",
+  billingLastName: "Doe",
+  billingAddress: "123 Main Street",
+  billingCity: "New York",
+  billingZipCode: "10001",
+  billingCountryCode: "US",
+  billingPhoneNumber: "+15551234567",
+  email: "john@example.com",
+
+  require3DS: true,
+  forceChallenge: false,
+);
+
+if (result != null) {
+  print(result["nonce"]);
+}
+```
+### Card Payment Response
+
+```dart
+{
+  "nonce": "...",
+  "deviceData": "...",
+  "liabilityShifted": true,
+  "liabilityShiftPossible": true,
+}
+```
+The `authorization` parameter accepts either:
+
+- a Client Token (recommended)
+- a Tokenization Key
+
+No separate APIs are required.
+> Billing and customer information are optional but recommended when using 3D Secure, as they may improve issuer authentication and fraud detection.
+
+### 3D Secure
+
+`startCardPayment()` supports optional 3D Secure verification.
+
+| Option           | Description                                                                                                                  |
+|------------------|------------------------------------------------------------------------------------------------------------------------------|
+| `require3DS`     | Enables or disables 3D Secure authentication. Defaults to `true`.                                                            |
+| `forceChallenge` | Requests that the issuer display a challenge (OTP, banking app approval, biometric verification, etc.). Defaults to `false`. |
+
+> Even when `forceChallenge` is `true`, the issuing bank ultimately decides whether a challenge is shown.
 
 #### Return URL Configuration
 
@@ -164,7 +220,7 @@ In your code, import the plugin:
 import 'package:flutter_braintree_native/flutter_braintree_native.dart';
 ```
 
-You can then create your own user interface using Flutter or use Braintree's Custom UI.
+You can build your own payment UI entirely in Flutter while using the official Braintree native SDKs for tokenization and payment authentication.
 
 ### Braintree's native UI
 
@@ -195,10 +251,11 @@ String? deviceData = result["deviceData"];
 
 ### ⚠️ Security Notice
 
-This plugin generates payment nonces only.
-You must send the nonce to your backend server to create transactions securely.
+This plugin only tokenizes payment methods and returns a payment nonce.
 
-Never complete payments directly from the client.
+Always send the returned nonce to your backend server to create or authorize transactions using the Braintree Server SDK.
+
+Never process payments or store sensitive payment information directly from the client.
 
 ### 📌 Known Limitations
 

@@ -105,8 +105,17 @@ public class FlutterBraintreePlugin implements FlutterPlugin, ActivityAware, Met
                 intent.putExtra("expirationYear", (String) request.get("expirationYear"));
                 intent.putExtra("cvv", (String) request.get("cvv"));
                 intent.putExtra("amount", (String) request.get("amount"));
-                intent.putExtra("streetAddress", (String) request.get("streetAddress"));
-                intent.putExtra("postalCode", (String) request.get("postalCode"));
+
+                intent.putExtra("billingAddress", (String) request.get("billingAddress"));
+                intent.putExtra("billingZipCode", (String) request.get("billingZipCode"));
+                intent.putExtra("billingCity", (String) request.get("billingCity"));
+                intent.putExtra("billingCountryCode", (String) request.get("billingCountryCode"));
+                intent.putExtra("billingFirstName", (String) request.get("billingFirstName"));
+                intent.putExtra("billingLastName", (String) request.get("billingLastName"));
+                intent.putExtra("billingPhoneNumber", (String) request.get("billingPhoneNumber"));
+
+                intent.putExtra("email", (String) request.get("email"));
+
                 startActivityForResultSafely(intent, CREDIT_CARD_REQUEST_CODE);
             }
             case "collectDeviceData" -> {
