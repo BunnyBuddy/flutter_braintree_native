@@ -1,3 +1,11 @@
+## 0.1.7
+
+### Changed
+
+* Migrated iOS app lifecycle handling to the UISceneDelegate architecture.
+* Updated native Android and iOS dependencies to their latest supported versions.
+* Improved compatibility with newer iOS and Android platform requirements.
+
 ## 0.1.6
 
 ### Added

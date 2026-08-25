@@ -24,13 +24,13 @@ Pod::Spec.new do |s|
   }
   s.dependency 'Flutter'
 
-  s.dependency 'Braintree/Core', '~> 7.8.0'
-  s.dependency 'Braintree/Card', '~> 7.8.0'
-  s.dependency 'Braintree/PayPal', '~> 7.8.0'
-  s.dependency 'Braintree/DataCollector', '~> 7.8.0'
-  s.dependency 'Braintree/ApplePay', '~> 7.8.0'
-  s.dependency 'Braintree/Venmo', '~> 7.8.0'
-  s.dependency 'Braintree/ThreeDSecure', '~> 7.8.0'
+  s.dependency 'Braintree/Core', '~> 7.9.0'
+  s.dependency 'Braintree/Card', '~> 7.9.0'
+  s.dependency 'Braintree/PayPal', '~> 7.9.0'
+  s.dependency 'Braintree/DataCollector', '~> 7.9.0'
+  s.dependency 'Braintree/ApplePay', '~> 7.9.0'
+  s.dependency 'Braintree/Venmo', '~> 7.9.0'
+  s.dependency 'Braintree/ThreeDSecure', '~> 7.9.0'
 
   s.ios.deployment_target = '16.0'
   s.swift_version = '5.0'

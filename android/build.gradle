@@ -44,16 +44,16 @@ android {
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom:2.2.10"))
     implementation "com.google.android.gms:play-services-wallet:19.5.0"
-    implementation "androidx.appcompat:appcompat:1.7.1"
-    implementation "androidx.constraintlayout:constraintlayout:2.2.1"
+    implementation "androidx.appcompat:appcompat:1.8.0"
+    implementation "androidx.constraintlayout:constraintlayout:2.2.2"
 
-    implementation 'com.braintreepayments.api:google-pay:5.29.0'
-    implementation 'com.braintreepayments.api:card:5.29.0'
-    implementation 'com.braintreepayments.api:braintree-core:5.29.0'
-    implementation "com.braintreepayments.api:data-collector:5.29.0"
-    implementation "com.braintreepayments.api:venmo:5.29.0"
-    implementation "com.braintreepayments.api:paypal:5.29.0"
-    implementation "com.braintreepayments.api:three-d-secure:5.29.0"
+    implementation 'com.braintreepayments.api:google-pay:5.31.0'
+    implementation 'com.braintreepayments.api:card:5.31.0'
+    implementation 'com.braintreepayments.api:braintree-core:5.31.0'
+    implementation "com.braintreepayments.api:data-collector:5.31.0"
+    implementation "com.braintreepayments.api:venmo:5.31.0"
+    implementation "com.braintreepayments.api:paypal:5.31.0"
+    implementation "com.braintreepayments.api:three-d-secure:5.31.0"
 
     components.all {
         allVariants {
